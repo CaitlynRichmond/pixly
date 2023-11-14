@@ -1,23 +1,21 @@
 """SQLAlchemy models for Pix.ly."""
 
-from datetime import datetime
-
-from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSONB
 
-bcrypt = Bcrypt()
 db = SQLAlchemy()
 
 
-class PhotoData(db.Model):
+class Photo(db.Model):
     """Database of photo EXIF data"""
 
-    __tablename__ = "photodata"
+    __tablename__ = "photos"
 
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    exif = db.Column(JSONB, nullable=False)
 
 
 def connect_db(app):
-    
     """Connect this database to provided Flask app.
 
     You should call this in your Flask app.

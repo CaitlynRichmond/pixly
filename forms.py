@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 
 # from wtforms.validators import InputRequired
-from flask_wtf.file import FileField, FileRequired, FileAllowed
+from flask_wtf.file import FileField, FileRequired
 
 # from werkzeug.utils import secure_filename
 
@@ -13,9 +13,5 @@ class ImageForm(FlaskForm):
         "File",
         validators=[
             FileRequired(),
-            FileAllowed(
-                ["pdf", "png", "jpg", "jpeg", "heic"],
-                "Invalid File Type. Must be .heic, .pdf, .jpg, .png, .jpeg",
-            ),
         ],
     )
