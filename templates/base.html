@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pix.ly</title>
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap@5/dist/css/bootstrap.css">
+  <script src="https://unpkg.com/jquery"></script>
+  <script src="https://unpkg.com/bootstrap"></script>
+
+  <link rel="stylesheet" href="https://www.unpkg.com/bootstrap-icons/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/stylesheets/style.css">
+  <link rel="shortcut icon" href="/static/pencil.png">
+</head>
+
+<body>
+  <nav class="navbar navbar-expand">
+    <div class="container-fluid">
+
+      <div class="navbar-header">
+        <a href="/" class="navbar-brand">
+          <img src="/static/pencil.png" alt="logo">
+          <span>Pix.ly</span>
+        </a>
+      </div>
+
+      <ul class="nav navbar-nav navbar-right">
+
+        {% block searchbox %}
+        <li>
+          <form class="navbar-form navbar-end" action="/users">
+            <input name="q" class="form-control" placeholder="Search Pix.ly" aria-label="Search" id="search">
+            <button class="btn btn-default">
+              <span class="bi bi-search"></span>
+            </button>
+          </form>
+        </li>
+        {% endblock %}
+
+        <li>
+          <a href="/upload">
+            <img src="/static/upload.png" alt="Upload Image Here">
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+</body>
+
+</html>
