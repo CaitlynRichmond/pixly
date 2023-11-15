@@ -1,10 +1,37 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class>
-  {% for id in ids %}
-  <a href="/images/{{id}}"> <img class="gallery-image img-thumbnail"
-      src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{id}}">
-  </a>
-  {% endfor %}
+<div class="image-gallery">
+  <!--TODO: Make the form one column and the right the images grid-->
+  <div>
+    <form method="POST" class="Filter Fields">
+      {{ form.hidden_tag() }} <!--add type=hidden form fields -->
+
+      {% for field in form
+      if field.widget.input_type != 'hidden' %}
+
+      <span>
+        <b> {{ field.label }} </b>
+        {{ field }}
+        {% for error in field.errors %}
+        {{ error }}
+        {% endfor %}
+      </span>
+
+      {% endfor %}
+
+      <button class="btn btn-secondary btn-sm">Search!</button>
+    </form>
+  </div>
+
+  <div class="container text-center">
+    <h1 class="align-self-start">Results:</h1>
+    <div id="image-gallery-list" class="row">
+      {% for photo in photos %}
+      <div class="col-3"> <a href="/images/{{photo.id}}"> <img class="gallery-image img-thumbnail"
+            src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
+        </a></div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 {% endblock %}

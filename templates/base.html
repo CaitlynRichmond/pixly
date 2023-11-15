@@ -29,7 +29,7 @@
 
         {% block searchbox %}
         <li>
-          <form class="navbar-form navbar-end" action="/users">
+          <form class="navbar-form navbar-end" action="/images">
             <input name="q" class="form-control" placeholder="Search Pix.ly" aria-label="Search" id="search">
             <button class="btn btn-default">
               <span class="bi bi-search"></span>
@@ -46,7 +46,7 @@
       </ul>
     </div>
   </nav>
-  <div class="container">
+  <div class="base-container">
     {% block content %}
     {% endblock %}
   </div>

@@ -1,7 +1,7 @@
 """SQLAlchemy models for Pix.ly."""
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON
 
 
 db = SQLAlchemy()
@@ -15,7 +15,8 @@ class Photo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, default="Untitled", nullable=False)
     caption = db.Column(db.Text, default="No caption", nullable=False)
-    exif = db.Column(JSONB, nullable=False)
+    by = db.Column(db.Text, default="Unknown", nullable=False)
+    exif = db.Column(JSON, nullable=False)
 
 
 def connect_db(app):

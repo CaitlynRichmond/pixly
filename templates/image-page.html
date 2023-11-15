@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-<div>
-  <img src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{id}}">
+<div class="image-page container">
+  <h2>{{photo.title}}</h2>
+  <h3>{{photo.caption}}</h3>
+  <img class="image-page-image" src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
+  <div>By: {{photo.by}}</div>
 </div>
 {% endblock %}

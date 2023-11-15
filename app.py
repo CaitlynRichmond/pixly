@@ -9,9 +9,10 @@ from werkzeug.utils import secure_filename
 from PIL import Image, TiffImagePlugin
 
 from PIL.ExifTags import TAGS
-from forms import ImageForm
+from forms import ImageForm, EXIFSearchForm
 from models import db, connect_db, Photo
-import json
+from sqlalchemy import text, or_
+
 
 load_dotenv()
 
@@ -51,6 +52,11 @@ def upload():
     if form.validate_on_submit():
         # Image is a werkzeug.FileStorage based on the enc type on the form
         image = form.image.data
+        data = {
+            k: v
+            for k, v in form.data.items()
+            if k != "csrf_token" and k != "image" and v != ""
+        }
         filename = secure_filename(image.filename)
 
         # Gets the images content type (attribute of the werkzeug.FileStorage type)
@@ -89,11 +95,18 @@ def upload():
             for k, v in image._getexif().items():  # type: ignore as method exists
                 if k in TAGS:
                     v = cast(v)
+                    print("K IS PRINTED HERE AAA     ", TAGS[k])
+                    print("V IS PRINTED HERE AAA     ", v)
+                    print("V IS TYPE", type(v))
                     dct[TAGS[k]] = v
-        out = json.dumps(dct)
-
-        photo = Photo(exif=out)  # type: ignore
+        photo = Photo(exif=dct, **data)  # type: ignore
         db.session.add(photo)
+        db.session.commit()
+        sql = text(
+            """UPDATE photos set exif= REPLACE(exif::text, :val, '' )::json
+            WHERE exif::text like :val2;"""
+        )
+        db.session.execute(sql, {"val": r"\u0000", "val2": r"%\u0000%"})
         db.session.commit()
 
         s3.upload_file(
@@ -117,21 +130,56 @@ def image_page(id):
 
     photo = Photo.query.get_or_404(id)
 
-    return render_template("image-page.html", id=photo.id)
+    return render_template("image-page.html", photo=photo)
 
 
-@app.get("/images")
+@app.route("/images", methods=["GET", "POST"])
 def image_gallery():
     search = request.args.get("q")
 
     if not search:
         photos = Photo.query.all()
     else:
-        print("Function not implemented yet")
-        # users = User.query.filter(User.username.like(f"%{search}%")).all()
+        photos = Photo.query.filter(
+            or_(
+                Photo.by.ilike(f"%{search}%"),
+                Photo.title.ilike(f"%{search}%"),
+                Photo.caption.ilike(f"%{search}%"),
+            )
+        ).all()
+    form = EXIFSearchForm()
+    if form.validate_on_submit():
+        print("test    make ", form.make.data)
+        print("test   model ", form.model.data)
+        model = form.model.data
+        make = form.make.data
+        if model != "Any":
+            photos = [
+                photo for photo in photos if photo.exif.get("Model") == model
+            ]
+        if make != "Any":
+            photos = [
+                photo for photo in photos if photo.exif.get("Make") == make
+            ]
 
-    print("PHOTOS ", photos)
+    # So I want photo EXIF data here, and I want to group them by the exif data names
+    makes = set()
+    models = set()
+    for photo in photos:
+        makes.add(photo.exif.get("Make"))
+        models.add(photo.exif.get("Model"))
 
-    ids = [photo.id for photo in photos]
-    print("ids ", ids)
-    return render_template("image-gallery.html", ids=ids)
+    if None in makes:
+        makes.remove(None)
+
+    if None in models:
+        models.remove(None)
+
+    # print("MAKES   ", makes)
+    # print("MODELS   ", models)
+    form.make.choices = ["Any", *makes]
+    form.model.choices = ["Any", *models]
+
+    return render_template(
+        "image-gallery.html", form=form, search=search, photos=photos
+    )
