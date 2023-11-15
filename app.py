@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import boto3
 
 
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, request
 from werkzeug.utils import secure_filename
 
 from PIL import Image, TiffImagePlugin
@@ -12,11 +12,6 @@ from PIL.ExifTags import TAGS
 from forms import ImageForm
 from models import db, connect_db, Photo
 import json
-
-S3_BUCKET = os.environ["AWS_BUCKET"]
-S3_SECRET_KEY = os.environ["AWS_SECRET_KEY"]
-S3_ACCESS_KEY = os.environ["AWS_ACCESS_KEY"]
-
 
 load_dotenv()
 
@@ -28,13 +23,14 @@ app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 connect_db(app)
-db.create_all()
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id=S3_ACCESS_KEY,
-    aws_secret_access_key=S3_SECRET_KEY,
+    aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+    aws_secret_access_key=os.environ["AWS_SECRET_KEY"],
 )
+
+db.create_all()
 
 
 @app.get("/")
@@ -89,10 +85,11 @@ def upload():
             else:
                 return v
 
-        for k, v in image._getexif().items():  # type: ignore as method exists
-            if k in TAGS:
-                v = cast(v)
-                dct[TAGS[k]] = v
+        if image._getexif() != None:  # type: ignore as method exists
+            for k, v in image._getexif().items():  # type: ignore as method exists
+                if k in TAGS:
+                    v = cast(v)
+                    dct[TAGS[k]] = v
         out = json.dumps(dct)
 
         photo = Photo(exif=out)  # type: ignore
@@ -101,7 +98,7 @@ def upload():
 
         s3.upload_file(
             filename,
-            S3_BUCKET,
+            os.environ["AWS_BUCKET"],
             str(photo.id),
             ExtraArgs={
                 "ContentType": f"{content_type}",
@@ -109,5 +106,32 @@ def upload():
         )
 
         os.remove(filename)
+        return redirect(f"/images/{photo.id}")
 
     return render_template("upload.html", form=form)
+
+
+@app.get("/images/<int:id>")
+def image_page(id):
+    """Gets the specific image profile"""
+
+    photo = Photo.query.get_or_404(id)
+
+    return render_template("image-page.html", id=photo.id)
+
+
+@app.get("/images")
+def image_gallery():
+    search = request.args.get("q")
+
+    if not search:
+        photos = Photo.query.all()
+    else:
+        print("Function not implemented yet")
+        # users = User.query.filter(User.username.like(f"%{search}%")).all()
+
+    print("PHOTOS ", photos)
+
+    ids = [photo.id for photo in photos]
+    print("ids ", ids)
+    return render_template("image-gallery.html", ids=ids)
