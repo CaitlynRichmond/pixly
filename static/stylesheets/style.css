@@ -116,3 +116,9 @@ nav form.navbar-form {
   font-size: 10rem;
   padding: 0 7rem 10rem 3rem;
 }
+
+/* ======================= Gallery */
+.gallery-image{
+  width: 50%;
+  height: 50%;
+}
