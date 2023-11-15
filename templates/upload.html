@@ -1,35 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
+{% block content %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
+<form id="image-form" method="POST" enctype="multipart/form-data">
+  {{ form.hidden_tag() }} <!--add type=hidden form fields -->
 
-<body>
-  <img src="https://pixly-cait.s3.us-east-2.amazonaws.com/weird-dog-lizard-hybrid.webp">
+  {% for field in form
+  if field.widget.input_type != 'hidden' %}
 
-  <form id="image-form" method="POST" enctype="multipart/form-data">
-    {{ form.hidden_tag() }} <!--add type=hidden form fields -->
+  <p>
+    {{ field.label }}
+    {{ field }}
 
-    {% for field in form
-    if field.widget.input_type != 'hidden' %}
-
-    <p>
-      {{ field.label }}
-      {{ field }}
-
-      {% for error in field.errors %}
-      {{ error }}
-      {% endfor %}
-    </p>
-
+    {% for error in field.errors %}
+    {{ error }}
     {% endfor %}
+  </p>
 
-    <button type="submit">Submit</button>
-  </form>
+  {% endfor %}
 
-</body>
+  <button type="submit">Submit</button>
+</form>
 
-</html>
+{% endblock %}

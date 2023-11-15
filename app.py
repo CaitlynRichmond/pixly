@@ -6,11 +6,12 @@ import boto3
 from flask import Flask, render_template
 from werkzeug.utils import secure_filename
 
-from PIL import Image
+from PIL import Image, TiffImagePlugin
 
-# from PIL.ExifTags import TAGS
+from PIL.ExifTags import TAGS
 from forms import ImageForm
-from models import db, connect_db
+from models import db, connect_db, Photo
+import json
 
 S3_BUCKET = os.environ["AWS_BUCKET"]
 S3_SECRET_KEY = os.environ["AWS_SECRET_KEY"]
@@ -34,6 +35,13 @@ s3 = boto3.client(
     aws_access_key_id=S3_ACCESS_KEY,
     aws_secret_access_key=S3_SECRET_KEY,
 )
+
+
+@app.get("/")
+def homepage():
+    """Show homepage"""
+
+    return render_template("homepage.html")
 
 
 @app.route("/upload", methods=["GET", "POST"])
@@ -63,23 +71,40 @@ def upload():
         # is file name!
         image = Image.open(f"{filename}")
 
-        # Exif data
-        # exif = {}
-        # for k, v in image.getexif().items():
-        #     tag = TAGS.get(k)
-        #     exif[tag] = v
+        # Exif data code from https://github.com/python-pillow/Pillow/issues/6199
+        # As you cannot cast from the standard output EXIF format to JSON
+        dct = {}
 
-        # photo = Photo(exif=exif)
-        # print("!!!!!!", photo)
+        def cast(v):
+            if isinstance(v, TiffImagePlugin.IFDRational):
+                return float(v)
+            elif isinstance(v, tuple):
+                return tuple(cast(t) for t in v)
+            elif isinstance(v, bytes):
+                return v.decode(errors="replace")
+            elif isinstance(v, dict):
+                for kk, vv in v.items():
+                    v[kk] = cast(vv)
+                return v
+            else:
+                return v
+
+        for k, v in image._getexif().items():  # type: ignore as method exists
+            if k in TAGS:
+                v = cast(v)
+                dct[TAGS[k]] = v
+        out = json.dumps(dct)
+
+        photo = Photo(exif=out)  # type: ignore
+        db.session.add(photo)
+        db.session.commit()
 
         s3.upload_file(
             filename,
             S3_BUCKET,
-            filename,  # TODO: Make this something that's unique (maybe id once in db)
+            str(photo.id),
             ExtraArgs={
-                "Metadata": {
-                    "ContentType": f"{content_type}",
-                }
+                "ContentType": f"{content_type}",
             },
         )
 

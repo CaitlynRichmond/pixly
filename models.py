@@ -11,7 +11,7 @@ class Photo(db.Model):
 
     __tablename__ = "photos"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     exif = db.Column(JSONB, nullable=False)
 
 
@@ -22,5 +22,4 @@ def connect_db(app):
     """
 
     app.app_context().push()
-    db.app = app
     db.init_app(app)
