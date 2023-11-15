@@ -3,6 +3,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSONB
 
+
 db = SQLAlchemy()
 
 
@@ -12,6 +13,8 @@ class Photo(db.Model):
     __tablename__ = "photos"
 
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Text, default="Untitled", nullable=False)
+    caption = db.Column(db.Text, default="No caption", nullable=False)
     exif = db.Column(JSONB, nullable=False)
 
 
@@ -22,4 +25,5 @@ def connect_db(app):
     """
 
     app.app_context().push()
+    db.app = app
     db.init_app(app)
