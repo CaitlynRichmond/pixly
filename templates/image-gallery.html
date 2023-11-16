@@ -2,11 +2,14 @@
 {% block content %}
 
 <div class="container text-center">
-  <div class="row">
+  <div class="row align-items-end">
     {%if search == "" %}
-    <h2 class="col-sm-12 text-start">All Images</h2>
+    <h2 class="col-sm-2 text-start"></h2>
+
+    <h2 class="col-sm-10 text-start">All Images</h2>
     {% else %}
-    <h2 class=" col-sm-12 text-start">Results for {{search}}:</h2>
+    <h2 class="col-sm-2 text-start"></h2>
+    <h2 class=" col-sm-10 text-start">Results for {{search}}:</h2>
     {% endif %}
   </div>
   <div>
@@ -14,16 +17,6 @@
     <span>No photos found</span>
     {% else %}
     <div class=" row">
-
-      <div class="col-sm-10">
-        <div class="row">
-          {% for photo in photos %}
-          <div class="col-2"> <a href="/images/{{photo.id}}"> <img class="gallery-image img-thumbnail"
-                src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
-            </a></div>
-          {% endfor %}
-        </div>
-      </div>
       <div class="col-sm-2">
         <form method="POST" class="Filter Fields">
           {{ form.hidden_tag() }} <!--add type=hidden form fields -->
@@ -49,6 +42,17 @@
           <button class="btn btn-secondary btn-sm float-start">Search!</button>
         </form>
       </div>
+
+      <div class="col-sm-10">
+        <div class="row">
+          {% for photo in photos %}
+          <div class="col-2"> <a href="/images/{{photo.id}}"> <img class="gallery-image img-thumbnail"
+                src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
+            </a></div>
+          {% endfor %}
+        </div>
+      </div>
+
     </div>
     {% endif %}
   </div>

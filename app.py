@@ -166,6 +166,7 @@ def image_page(id):
 @app.route("/images", methods=["GET", "POST"])
 def image_gallery():
     search = request.args.get("q")
+    search = str(search).strip()
 
     if not search:
         photos = Photo.query.all()
