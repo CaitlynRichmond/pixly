@@ -7,10 +7,10 @@
   <div>By: {{photo.by}}</div>
 
 
-  {% for argument in arguments %}
-  <form method="POST" action="/images/{{photo.id}}/edit/{{argument}}">
+  {% for edit in edit_options %}
+  <form method="POST" action="/images/{{photo.id}}/edit/{{edit}}">
     {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> {{argument.capitalize()}} </button>
+    <button class="btn btn-primary" type="submit"> {{edit.capitalize()}} </button>
   </form>
 
   {% endfor %}

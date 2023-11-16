@@ -7,7 +7,7 @@ from flask_caching import Cache
 from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
 
-from PIL import Image, TiffImagePlugin, ImageOps, ImageFilter
+from PIL import Image, TiffImagePlugin, ImageOps, ImageFilter, ImagePalette
 from image_conversions import edit_image
 from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
@@ -108,6 +108,7 @@ def upload():
                 if k in TAGS:
                     v = cast(v)
                     dct[TAGS[k]] = v
+        image.close()
         photo = Photo(exif=dct, **data)  # type: ignore
         db.session.add(photo)
         db.session.commit()
@@ -147,17 +148,18 @@ def image_page(id):
     """Gets the specific image profile"""
 
     photo = Photo.query.get_or_404(id)
-    arguments = [
+    edit_options = [
         "flip",
         "mirror",
         "blur",
         "grayscale",
         "auto-contrast",
         "invert",
+        "sepia",
     ]
 
     return render_template(
-        "image-page.html", photo=photo, arguments=arguments
+        "image-page.html", photo=photo, edit_options=edit_options
     )
 
 
@@ -220,9 +222,10 @@ def edit_image_test(id, edit):
     image = Image.open(filename)
 
     new_image = edit_image(image, edit)
+    image.close()
 
     new_image.save(os.path.join(filename))
-    content_type = image.format
+    content_type = new_image.format
 
     s3.upload_file(
         filename,
@@ -233,6 +236,7 @@ def edit_image_test(id, edit):
         },
     )
 
+    new_image.close()
     cache.clear()
 
     os.remove(filename)
@@ -257,6 +261,8 @@ def revert_image(id):
         },
     )
     cache.clear()
+
+    image.close()
 
     os.remove(filename)
 
