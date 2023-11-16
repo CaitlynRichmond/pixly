@@ -4,13 +4,25 @@ import boto3
 from flask_caching import Cache
 
 
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
 
 from PIL import Image, TiffImagePlugin, ImageOps
+from PIL.ImageFilter import (
+    BLUR,
+    CONTOUR,
+    DETAIL,
+    EDGE_ENHANCE,
+    EDGE_ENHANCE_MORE,
+    EMBOSS,
+    FIND_EDGES,
+    SMOOTH,
+    SMOOTH_MORE,
+    SHARPEN,
+)
 
 from PIL.ExifTags import TAGS
-from forms import ImageForm, EXIFSearchForm
+from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
 from models import db, connect_db, Photo
 from sqlalchemy import text, or_
 
@@ -36,6 +48,13 @@ s3 = boto3.client(
 )
 
 db.create_all()
+
+
+@app.before_request
+def add_csrf_form_to_g():
+    """Add a csrf form to Flask global"""
+
+    g.csrf_form = CSRFProtectForm()
 
 
 @app.get("/")
@@ -189,8 +208,8 @@ def image_gallery():
     )
 
 
-@app.route("/images/<int:id>/edit", methods=["GET", "POST"])
-def edit_image_test(id):
+@app.route("/images/<int:id>/edit/<edit>", methods=["GET", "POST"])
+def edit_image_test(id, edit):
     cache.clear()
 
     filename = f"{id}.png"
@@ -200,7 +219,12 @@ def edit_image_test(id):
     os.rename(str(id), filename)
     image = Image.open(filename)
 
-    newImage = ImageOps.flip(image)
+    if edit == "flip":
+        newImage = ImageOps.flip(image)
+    elif edit == "mirror":
+        newImage = ImageOps.mirror(image)
+    else:
+        newImage = image.filter(SMOOTH)
     newImage.save(os.path.join(filename))
     content_type = image.format
 

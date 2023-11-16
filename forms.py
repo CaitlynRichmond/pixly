@@ -27,3 +27,7 @@ class EXIFSearchForm(FlaskForm):
 
     make = RadioField("Make", choices=[], validate_choice=False)
     model = RadioField("Model", choices=[], validate_choice=False)
+
+
+class CSRFProtectForm(FlaskForm):
+    """Form for CSRF validation, used on the editing page"""

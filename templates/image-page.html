@@ -5,5 +5,16 @@
   <h3>{{photo.caption}}</h3>
   <img class="image-page-image" src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
   <div>By: {{photo.by}}</div>
+
+  <form method="POST" action="/images/{{photo.id}}/edit/flip">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-down-up"></span></button>
+  </form>
+  <form method="POST" action="/images/{{photo.id}}/edit/mirror">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-left-right"></span></button>
+  </form>
+
+
 </div>
 {% endblock %}
