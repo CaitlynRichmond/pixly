@@ -25,8 +25,12 @@ class ImageForm(FlaskForm):
 class EXIFSearchForm(FlaskForm):
     """Form for searching EXIF Data, choices are dynamically created"""
 
-    make = RadioField("Make", choices=[], validate_choice=False)
-    model = RadioField("Model", choices=[], validate_choice=False)
+    make = RadioField(
+        "Make", choices=[], default="Any", validate_choice=False
+    )
+    model = RadioField(
+        "Model", choices=[], default="Any", validate_choice=False
+    )
 
 
 class CSRFProtectForm(FlaskForm):

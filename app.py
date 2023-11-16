@@ -165,6 +165,7 @@ def image_gallery():
         print("test   model ", form.model.data)
         model = form.model.data
         make = form.make.data
+        print(make, "MAKE IS HERE AAA")
         if model != "Any":
             photos = [
                 photo for photo in photos if photo.exif.get("Model") == model
