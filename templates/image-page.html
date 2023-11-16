@@ -6,6 +6,7 @@
   <img class="image-page-image" src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
   <div>By: {{photo.by}}</div>
 
+
   <form method="POST" action="/images/{{photo.id}}/edit/flip">
     {{ g.csrf_form.hidden_tag() }}
     <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-down-up"></span></button>
@@ -19,6 +20,25 @@
     <button class="btn btn-primary" type="submit"> Blur </button>
   </form>
 
+  <form method="POST" action="/images/{{photo.id}}/edit/grayscale">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-primary" type="submit"> Grayscale </button>
+  </form>
+
+  <form method="POST" action="/images/{{photo.id}}/edit/auto-contrast">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-primary" type="submit"> Auto-Contrast </button>
+  </form>
+
+  <form method="POST" action="/images/{{photo.id}}/edit/revert">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-warning" type="submit"> Revert </button>
+  </form>
+
+  <form method="POST" action="/images/{{photo.id}}/delete">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-danger" type="submit"> Delete </button>
+  </form>
 
 </div>
 {% endblock %}

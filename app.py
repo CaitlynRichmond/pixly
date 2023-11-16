@@ -21,6 +21,7 @@ load_dotenv()
 
 app = Flask(__name__)
 cache = Cache(app)
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
@@ -130,6 +131,15 @@ def upload():
             },
         )
 
+        s3.upload_file(
+            filename,
+            os.environ["AWS_BUCKET"],
+            f"{photo.id}-original",
+            ExtraArgs={
+                "ContentType": f"{content_type}",
+            },
+        )
+
         os.remove(filename)
         return redirect(f"/images/{photo.id}")
 
@@ -161,11 +171,8 @@ def image_gallery():
         ).all()
     form = EXIFSearchForm()
     if form.validate_on_submit():
-        print("test    make ", form.make.data)
-        print("test   model ", form.model.data)
         model = form.model.data
         make = form.make.data
-        print(make, "MAKE IS HERE AAA")
         if model != "Any":
             photos = [
                 photo for photo in photos if photo.exif.get("Model") == model
@@ -201,23 +208,36 @@ def image_gallery():
 @app.route("/images/<int:id>/edit/<edit>", methods=["GET", "POST"])
 def edit_image_test(id, edit):
     cache.clear()
-
+    # can't do the rgb ops to non png
     filename = f"{id}.png"
 
-    s3.download_file(os.environ["AWS_BUCKET"], str(id), str(id))
+    if edit == "revert":
+        s3.download_file(
+            os.environ["AWS_BUCKET"], f"{id}-original", filename
+        )
+    else:
+        s3.download_file(os.environ["AWS_BUCKET"], str(id), filename)
 
-    os.rename(str(id), filename)
     image = Image.open(filename)
 
     if edit == "flip":
-        newImage = ImageOps.flip(image)
+        new_image = ImageOps.flip(image)
     elif edit == "mirror":
-        newImage = ImageOps.mirror(image)
+        new_image = ImageOps.mirror(image)
     elif edit == "blur":
-        newImage = image.filter(ImageFilter.GaussianBlur(radius=8))
+        new_image = image.filter(ImageFilter.GaussianBlur(radius=8))
+    elif edit == "invert":
+        new_image = ImageOps.invert(image)
+    elif edit == "auto-contrast":
+        try:
+            new_image = ImageOps.autocontrast(image)
+        except:
+            new_image = ImageOps.autocontrast(image.convert("RGB"))
+    elif edit == "grayscale":
+        new_image = ImageOps.grayscale(image)
     else:
-        newImage = image.filter(ImageFilter.GaussianBlur(radius=8))
-    newImage.save(os.path.join(filename))
+        new_image = image
+    new_image.save(os.path.join(filename))
     content_type = image.format
 
     s3.upload_file(
@@ -228,7 +248,39 @@ def edit_image_test(id, edit):
             "ContentType": f"{content_type}",
         },
     )
+    arguments = [
+        "flip",
+        "mirror",
+        "blur",
+        "grayscale",
+        "auto-contrast",
+        "invert",
+        "revert",
+    ]
+    cache.clear()
 
     os.remove(filename)
 
-    return redirect(f"/images/{id}")
+    return redirect(f"/images/{id}", arguments=arguments)
+
+
+@app.post("/images/<int:id>/delete")
+def delete_image(id):
+    s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}")
+    s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}-original")
+
+    Photo.query.filter_by(id=id).delete()
+    db.session.commit()
+
+    return redirect(f"/images")
+
+
+@app.after_request
+def add_header(response):
+    # response.cache_control.no_store = True
+    response.headers[
+        "Cache-Control"
+    ] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "-1"
+    return response
