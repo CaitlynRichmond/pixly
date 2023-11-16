@@ -128,13 +128,11 @@ nav form.navbar-form {
 
 }
 
-.image-page{
-  display: flex;
-  align-items: start;
-  flex-direction: column;
-  height: 100%;
-}
 
+/* ======================= Image page */
+.image-page > form{
+  display: inline
+}
 .image-page-image{
   height: 50%;
   width: 50%;
