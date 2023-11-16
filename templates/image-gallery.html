@@ -1,37 +1,43 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="image-gallery">
-  <!--TODO: Make the form one column and the right the images grid-->
-  <div>
-    <form method="POST" class="Filter Fields">
-      {{ form.hidden_tag() }} <!--add type=hidden form fields -->
 
-      {% for field in form
-      if field.widget.input_type != 'hidden' %}
+<div class="container text-center">
+  <div class="row">
+    <div class="col-sm-2">
+      <form method="POST" class="Filter Fields">
+        {{ form.hidden_tag() }} <!--add type=hidden form fields -->
 
-      <span>
-        <b> {{ field.label }} </b>
-        {{ field }}
-        {% for error in field.errors %}
-        {{ error }}
+        {% for field in form
+        if field.widget.input_type != 'hidden' %}
+
+        <div class="text-start">
+          <b> {{ field.label }} </b>
+          {% for subfield in field%}
+          <div>
+            {{ subfield }}
+            {{ subfield.label}}
+
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}</div>
+
+          {% endfor %}
+        </div>
         {% endfor %}
-      </span>
 
-      {% endfor %}
-
-      <button class="btn btn-secondary btn-sm">Search!</button>
-    </form>
-  </div>
-
-  <div class="container text-center">
-    <h1 class="align-self-start">Results:</h1>
-    <div id="image-gallery-list" class="row">
-      {% for photo in photos %}
-      <div class="col-3"> <a href="/images/{{photo.id}}"> <img class="gallery-image img-thumbnail"
-            src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
-        </a></div>
-      {% endfor %}
+        <button class="btn btn-secondary btn-sm float-start">Search!</button>
+      </form>
+    </div>
+    <div class="col-sm-10">
+      <div class="row">
+        {% for photo in photos %}
+        <div class="col-2"> <a href="/images/{{photo.id}}"> <img class="gallery-image img-thumbnail"
+              src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
+          </a></div>
+        {% endfor %}
+      </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}

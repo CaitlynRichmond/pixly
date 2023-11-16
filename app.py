@@ -1,12 +1,13 @@
 import os
 from dotenv import load_dotenv
 import boto3
+from flask_caching import Cache
 
 
 from flask import Flask, render_template, redirect, request
 from werkzeug.utils import secure_filename
 
-from PIL import Image, TiffImagePlugin
+from PIL import Image, TiffImagePlugin, ImageOps
 
 from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm
@@ -16,7 +17,10 @@ from sqlalchemy import text, or_
 
 load_dotenv()
 
+
 app = Flask(__name__)
+cache = Cache(app)
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["SQLALCHEMY_ECHO"] = False
@@ -183,3 +187,32 @@ def image_gallery():
     return render_template(
         "image-gallery.html", form=form, search=search, photos=photos
     )
+
+
+@app.route("/images/<int:id>/edit", methods=["GET", "POST"])
+def edit_image_test(id):
+    cache.clear()
+
+    filename = f"{id}.png"
+
+    s3.download_file(os.environ["AWS_BUCKET"], str(id), str(id))
+
+    os.rename(str(id), filename)
+    image = Image.open(filename)
+
+    newImage = ImageOps.flip(image)
+    newImage.save(os.path.join(filename))
+    content_type = image.format
+
+    s3.upload_file(
+        filename,
+        os.environ["AWS_BUCKET"],
+        str(id),
+        ExtraArgs={
+            "ContentType": f"{content_type}",
+        },
+    )
+
+    os.remove(filename)
+
+    return redirect(f"/images/{id}")
