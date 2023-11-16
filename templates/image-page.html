@@ -14,6 +14,10 @@
     {{ g.csrf_form.hidden_tag() }}
     <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-left-right"></span></button>
   </form>
+  <form method="POST" action="/images/{{photo.id}}/edit/blur">
+    {{ g.csrf_form.hidden_tag() }}
+    <button class="btn btn-primary" type="submit"> Blur </button>
+  </form>
 
 
 </div>

@@ -7,19 +7,8 @@ from flask_caching import Cache
 from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
 
-from PIL import Image, TiffImagePlugin, ImageOps
-from PIL.ImageFilter import (
-    BLUR,
-    CONTOUR,
-    DETAIL,
-    EDGE_ENHANCE,
-    EDGE_ENHANCE_MORE,
-    EMBOSS,
-    FIND_EDGES,
-    SMOOTH,
-    SMOOTH_MORE,
-    SHARPEN,
-)
+from PIL import Image, TiffImagePlugin, ImageOps, ImageFilter
+
 
 from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
@@ -223,8 +212,10 @@ def edit_image_test(id, edit):
         newImage = ImageOps.flip(image)
     elif edit == "mirror":
         newImage = ImageOps.mirror(image)
+    elif edit == "blur":
+        newImage = image.filter(ImageFilter.GaussianBlur(radius=8))
     else:
-        newImage = image.filter(SMOOTH)
+        newImage = image.filter(ImageFilter.GaussianBlur(radius=8))
     newImage.save(os.path.join(filename))
     content_type = image.format
 
