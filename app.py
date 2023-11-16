@@ -8,8 +8,7 @@ from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
 
 from PIL import Image, TiffImagePlugin, ImageOps, ImageFilter
-
-
+from image_conversions import edit_image
 from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
 from models import db, connect_db, Photo
@@ -108,9 +107,6 @@ def upload():
             for k, v in image._getexif().items():  # type: ignore as method exists
                 if k in TAGS:
                     v = cast(v)
-                    print("K IS PRINTED HERE AAA     ", TAGS[k])
-                    print("V IS PRINTED HERE AAA     ", v)
-                    print("V IS TYPE", type(v))
                     dct[TAGS[k]] = v
         photo = Photo(exif=dct, **data)  # type: ignore
         db.session.add(photo)
@@ -151,8 +147,18 @@ def image_page(id):
     """Gets the specific image profile"""
 
     photo = Photo.query.get_or_404(id)
+    arguments = [
+        "flip",
+        "mirror",
+        "blur",
+        "grayscale",
+        "auto-contrast",
+        "invert",
+    ]
 
-    return render_template("image-page.html", photo=photo)
+    return render_template(
+        "image-page.html", photo=photo, arguments=arguments
+    )
 
 
 @app.route("/images", methods=["GET", "POST"])
@@ -195,8 +201,6 @@ def image_gallery():
     if None in models:
         models.remove(None)
 
-    # print("MAKES   ", makes)
-    # print("MODELS   ", models)
     form.make.choices = ["Any", *makes]
     form.model.choices = ["Any", *models]
 
@@ -205,38 +209,18 @@ def image_gallery():
     )
 
 
-@app.route("/images/<int:id>/edit/<edit>", methods=["GET", "POST"])
+@app.post("/images/<int:id>/edit/<edit>")
 def edit_image_test(id, edit):
     cache.clear()
     # can't do the rgb ops to non png
     filename = f"{id}.png"
 
-    if edit == "revert":
-        s3.download_file(
-            os.environ["AWS_BUCKET"], f"{id}-original", filename
-        )
-    else:
-        s3.download_file(os.environ["AWS_BUCKET"], str(id), filename)
+    s3.download_file(os.environ["AWS_BUCKET"], str(id), filename)
 
     image = Image.open(filename)
 
-    if edit == "flip":
-        new_image = ImageOps.flip(image)
-    elif edit == "mirror":
-        new_image = ImageOps.mirror(image)
-    elif edit == "blur":
-        new_image = image.filter(ImageFilter.GaussianBlur(radius=8))
-    elif edit == "invert":
-        new_image = ImageOps.invert(image)
-    elif edit == "auto-contrast":
-        try:
-            new_image = ImageOps.autocontrast(image)
-        except:
-            new_image = ImageOps.autocontrast(image.convert("RGB"))
-    elif edit == "grayscale":
-        new_image = ImageOps.grayscale(image)
-    else:
-        new_image = image
+    new_image = edit_image(image, edit)
+
     new_image.save(os.path.join(filename))
     content_type = image.format
 
@@ -248,24 +232,40 @@ def edit_image_test(id, edit):
             "ContentType": f"{content_type}",
         },
     )
-    arguments = [
-        "flip",
-        "mirror",
-        "blur",
-        "grayscale",
-        "auto-contrast",
-        "invert",
-        "revert",
-    ]
+
     cache.clear()
 
     os.remove(filename)
 
-    return redirect(f"/images/{id}", arguments=arguments)
+    return redirect(f"/images/{id}")
+
+
+@app.post("/images/<int:id>/revert")
+def revert_image(id):
+    """Revert image to original"""
+    filename = f"{id}.png"
+
+    s3.download_file(os.environ["AWS_BUCKET"], f"{id}-original", filename)
+    image = Image.open(filename)
+    content_type = image.format
+    s3.upload_file(
+        filename,
+        os.environ["AWS_BUCKET"],
+        str(id),
+        ExtraArgs={
+            "ContentType": f"{content_type}",
+        },
+    )
+    cache.clear()
+
+    os.remove(filename)
+
+    return redirect(f"/images/{id}")
 
 
 @app.post("/images/<int:id>/delete")
 def delete_image(id):
+    """Delete image and any copies"""
     s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}")
     s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}-original")
 

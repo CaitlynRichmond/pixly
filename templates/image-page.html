@@ -7,30 +7,14 @@
   <div>By: {{photo.by}}</div>
 
 
-  <form method="POST" action="/images/{{photo.id}}/edit/flip">
+  {% for argument in arguments %}
+  <form method="POST" action="/images/{{photo.id}}/edit/{{argument}}">
     {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-down-up"></span></button>
-  </form>
-  <form method="POST" action="/images/{{photo.id}}/edit/mirror">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> Flip <span class="bi bi-arrow-left-right"></span></button>
-  </form>
-  <form method="POST" action="/images/{{photo.id}}/edit/blur">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> Blur </button>
+    <button class="btn btn-primary" type="submit"> {{argument.capitalize()}} </button>
   </form>
 
-  <form method="POST" action="/images/{{photo.id}}/edit/grayscale">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> Grayscale </button>
-  </form>
-
-  <form method="POST" action="/images/{{photo.id}}/edit/auto-contrast">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> Auto-Contrast </button>
-  </form>
-
-  <form method="POST" action="/images/{{photo.id}}/edit/revert">
+  {% endfor %}
+  <form method="POST" action="/images/{{photo.id}}/revert">
     {{ g.csrf_form.hidden_tag() }}
     <button class="btn btn-warning" type="submit"> Revert </button>
   </form>
