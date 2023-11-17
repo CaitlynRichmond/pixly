@@ -1,26 +1,33 @@
 import os
 from dotenv import load_dotenv
-import boto3
 from flask_caching import Cache
+import boto3
 
 
 from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
+from upload_helpers import get_metadata
 from gallery_helpers import (
     get_makes_and_models,
     get_filtered_photos,
     filter_by_make_and_model,
 )
+from s3 import s3_upload, s3_delete
 
 from PIL import Image, TiffImagePlugin
 from image_conversions import edit_image
-from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
 from models import db, connect_db, Photo
 from sqlalchemy import text
 
 
 load_dotenv()
+
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+    aws_secret_access_key=os.environ["AWS_SECRET_KEY"],
+)
 
 
 app = Flask(__name__)
@@ -34,12 +41,6 @@ app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 connect_db(app)
-
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
-    aws_secret_access_key=os.environ["AWS_SECRET_KEY"],
-)
 
 db.create_all()
 
@@ -76,47 +77,20 @@ def upload():
         }
         filename = secure_filename(image.filename)
 
-        # Gets the images content type (attribute of the werkzeug.FileStorage type)
-        # This is passed to amazon so that it exists in the metadata there
-        # and we can then open it by link
         content_type = image.content_type
 
-        # We're joining the image with the path name manipulation
-        # using the werkzeug method save, which saves the file to a destination
-        # path or object. So we're saving it to our directory
         image.save(os.path.join(filename))
-
-        # Opens image in the same directory as the code, meaning it's path
-        # is file name!
         image = Image.open(f"{filename}")
 
-        # Exif data code from https://github.com/python-pillow/Pillow/issues/6199
-        # As you cannot cast from the standard output EXIF format to JSON
-        dct = {}
+        dct = get_metadata(image)
 
-        def cast(v):
-            if isinstance(v, TiffImagePlugin.IFDRational):
-                return float(v)
-            elif isinstance(v, tuple):
-                return tuple(cast(t) for t in v)
-            elif isinstance(v, bytes):
-                return v.decode(errors="replace")
-            elif isinstance(v, dict):
-                for kk, vv in v.items():
-                    v[kk] = cast(vv)
-                return v
-            else:
-                return v
-
-        if image._getexif() != None:  # type: ignore as method exists
-            for k, v in image._getexif().items():  # type: ignore as method exists
-                if k in TAGS:
-                    v = cast(v)
-                    dct[TAGS[k]] = v
         image.close()
         photo = Photo(exif=dct, **data)  # type: ignore
         db.session.add(photo)
         db.session.commit()
+        #There's an issue with adding json and the conversion of some fields
+        #to the null unicode character, so sanitizing the database is the fix
+        #as the metadata can be nested multiple levels
         sql = text(
             """UPDATE photos set exif= REPLACE(exif::text, :val, '' )::json
             WHERE exif::text like :val2;"""
@@ -124,23 +98,8 @@ def upload():
         db.session.execute(sql, {"val": r"\u0000", "val2": r"%\u0000%"})
         db.session.commit()
 
-        s3.upload_file(
-            filename,
-            os.environ["AWS_BUCKET"],
-            str(photo.id),
-            ExtraArgs={
-                "ContentType": f"{content_type}",
-            },
-        )
-
-        s3.upload_file(
-            filename,
-            os.environ["AWS_BUCKET"],
-            f"{photo.id}-original",
-            ExtraArgs={
-                "ContentType": f"{content_type}",
-            },
-        )
+        s3_upload(filename, str(photo.id), content_type)
+        s3_upload(filename, f"{photo.id}-original", content_type)
 
         os.remove(filename)
         return redirect(f"/images/{photo.id}")
@@ -213,14 +172,7 @@ def edit_image_test(id, edit):
     new_image.save(os.path.join(filename))
     content_type = new_image.format
 
-    s3.upload_file(
-        filename,
-        os.environ["AWS_BUCKET"],
-        str(id),
-        ExtraArgs={
-            "ContentType": f"{content_type}",
-        },
-    )
+    s3_upload(filename, str(id), content_type)
 
     new_image.close()
     cache.clear()
@@ -238,14 +190,9 @@ def revert_image(id):
     s3.download_file(os.environ["AWS_BUCKET"], f"{id}-original", filename)
     image = Image.open(filename)
     content_type = image.format
-    s3.upload_file(
-        filename,
-        os.environ["AWS_BUCKET"],
-        str(id),
-        ExtraArgs={
-            "ContentType": f"{content_type}",
-        },
-    )
+
+    s3_upload(filename, str(id), content_type)
+
     cache.clear()
 
     image.close()
@@ -258,8 +205,8 @@ def revert_image(id):
 @app.post("/images/<int:id>/delete")
 def delete_image(id):
     """Delete image and any copies"""
-    s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}")
-    s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=f"{id}-original")
+    s3_delete(f"{id}")
+    s3_delete(f"{id}-original")
 
     Photo.query.filter_by(id=id).delete()
     db.session.commit()
