@@ -8,8 +8,8 @@
   if field.widget.input_type != 'hidden' %}
 
   <p>
-    {{ field.label }}
-    {{ field }}
+    {{ field.label(class="form-label") }}
+    {{ field(class="form-control")}}
 
     {% for error in field.errors %}
     {{ error }}
@@ -18,7 +18,7 @@
 
   {% endfor %}
 
-  <button type="submit">Submit</button>
+  <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 
 {% endblock %}

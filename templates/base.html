@@ -10,40 +10,44 @@
   <script src="https://unpkg.com/bootstrap"></script>
 
   <link rel="stylesheet" href="https://www.unpkg.com/bootstrap-icons/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/static/stylesheets/bootstrap.min.css">
   <link rel="stylesheet" href="/static/stylesheets/style.css">
+
+
   <link rel="shortcut icon" href="/static/pencil.png">
 </head>
 
 <body>
-  <nav class="navbar navbar-expand">
+  <nav class="navbar navbar-expand-lg bg-primary h-25" data-bs-theme="dark">
     <div class="container-fluid">
-
-      <div class="navbar-header">
-        <a href="/" class="navbar-brand">
-          <img src="/static/pencil.png" alt="logo">
-          <span>Pix.ly</span>
-        </a>
-      </div>
-
-      <ul class="nav navbar-nav navbar-right">
+      <a href="/" class="navbar-brand">
+        <img src="/static/pencil.png" alt="logo">
+        <span>Pix.ly</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
+        aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse navbar-nav navbar-right" id="navbarColor01">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/images"> Gallery
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/upload">Upload</a>
+          </li>
+        </ul>
 
         {% block searchbox %}
-        <li>
-          <form class="navbar-form navbar-end" action="/images">
-            <input name="q" class="form-control" placeholder="Search Pix.ly" aria-label="Search" id="search">
-            <button class="btn btn-default">
-              <span class="bi bi-search"></span>
-            </button>
-          </form>
-        </li>
+        <form class="navbar-form navbar-end" action="/images">
+          <input name="q" class="form-control bg-default" placeholder="Search Pix.ly" aria-label="Search" id="search">
+          <button class="btn btn-default">
+            <span class="bi bi-search"></span>
+          </button>
+        </form>
         {% endblock %}
-
-        <li>
-          <a href="/upload">
-            <img src="/static/upload.png" alt="Upload Image Here">
-          </a>
-        </li>
-      </ul>
+      </div>
     </div>
   </nav>
   <div class="base-container">

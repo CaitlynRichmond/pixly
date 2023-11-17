@@ -1,7 +1,6 @@
 /* ====================== General */
 
 body {
-  background-color: #e6ecf0;
   height: calc(100vh-50px);
   width: 100vw;
 }
@@ -13,26 +12,9 @@ body {
   justify-content: center;
 }
 
-body.error-404 {
-  background-color: #1da1f2;
-}
-
-.form-control {
-  margin-bottom: 20px;
-}
-
-.btn {
-  border-radius: 50px;
-}
-
-.btn:hover {
-  cursor: pointer;
-}
-
 /* ======================= Nav */
 
 .navbar {
-  background-color: #fff;
   height: 46px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.25);
   margin-bottom: 1rem;
@@ -41,13 +23,8 @@ body.error-404 {
 }
 
 .navbar a {
-  color: #66757f;
   font-size: 13px;
   font-weight: bold;
-}
-
-.navbar a:hover {
-  color: #1c94e0;
 }
 
 .navbar-brand {
@@ -128,12 +105,20 @@ nav form.navbar-form {
 
 }
 
+.gallery-image{
+  padding: 0rem;
+  height: 150px;
+  width: 100%;
+
+}
+
+
 
 /* ======================= Image page */
 .image-page > form{
   display: inline
 }
 .image-page-image{
-  height: 50%;
-  width: 50%;
+  max-height: 50%;
+  max-width: 50%;
 }
