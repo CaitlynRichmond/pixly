@@ -1,9 +1,6 @@
 import os
 from dotenv import load_dotenv
 from flask_caching import Cache
-import boto3
-
-
 from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
 from upload_helpers import get_metadata
@@ -12,23 +9,14 @@ from gallery_helpers import (
     get_filtered_photos,
     filter_by_make_and_model,
 )
-from s3 import s3_upload, s3_delete
-
-from PIL import Image, TiffImagePlugin
+from s3 import s3_upload, s3_delete, s3_download
+from PIL import Image
 from image_conversions import edit_image
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
 from models import db, connect_db, Photo
 from sqlalchemy import text
 
-
 load_dotenv()
-
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
-    aws_secret_access_key=os.environ["AWS_SECRET_KEY"],
-)
-
 
 app = Flask(__name__)
 cache = Cache(app)
@@ -68,29 +56,28 @@ def upload():
     form = ImageForm()
 
     if form.validate_on_submit():
-        # Image is a werkzeug.FileStorage based on the enc type on the form
         image = form.image.data
         data = {
             k: v
             for k, v in form.data.items()
             if k != "csrf_token" and k != "image" and v != ""
         }
-        filename = secure_filename(image.filename)
 
+        filename = secure_filename(image.filename)
         content_type = image.content_type
 
         image.save(os.path.join(filename))
         image = Image.open(f"{filename}")
-
         dct = get_metadata(image)
-
         image.close()
+
         photo = Photo(exif=dct, **data)  # type: ignore
         db.session.add(photo)
         db.session.commit()
-        #There's an issue with adding json and the conversion of some fields
-        #to the null unicode character, so sanitizing the database is the fix
-        #as the metadata can be nested multiple levels
+
+        # There's an issue with adding json and the conversion of some fields
+        # to the null unicode character, so sanitizing the database is the fix
+        # as the metadata can be nested multiple levels
         sql = text(
             """UPDATE photos set exif= REPLACE(exif::text, :val, '' )::json
             WHERE exif::text like :val2;"""
@@ -157,26 +144,24 @@ def image_gallery():
 
 
 @app.post("/images/<int:id>/edit/<edit>")
-def edit_image_test(id, edit):
+def edit_image_route(id, edit):
+    """Edit the image and upload to s3"""
+
     cache.clear()
-    # can't do the rgb ops to non png
     filename = f"{id}.png"
 
-    s3.download_file(os.environ["AWS_BUCKET"], str(id), filename)
+    s3_download(str(id), filename)
 
     image = Image.open(filename)
-
     new_image = edit_image(image, edit)
     image.close()
 
     new_image.save(os.path.join(filename))
     content_type = new_image.format
-
     s3_upload(filename, str(id), content_type)
 
     new_image.close()
     cache.clear()
-
     os.remove(filename)
 
     return redirect(f"/images/{id}")
@@ -185,18 +170,18 @@ def edit_image_test(id, edit):
 @app.post("/images/<int:id>/revert")
 def revert_image(id):
     """Revert image to original"""
+
     filename = f"{id}.png"
 
-    s3.download_file(os.environ["AWS_BUCKET"], f"{id}-original", filename)
+    s3_download(f"{id}-original", filename)
+
     image = Image.open(filename)
     content_type = image.format
 
     s3_upload(filename, str(id), content_type)
 
     cache.clear()
-
     image.close()
-
     os.remove(filename)
 
     return redirect(f"/images/{id}")
@@ -205,6 +190,7 @@ def revert_image(id):
 @app.post("/images/<int:id>/delete")
 def delete_image(id):
     """Delete image and any copies"""
+
     s3_delete(f"{id}")
     s3_delete(f"{id}-original")
 
@@ -216,7 +202,9 @@ def delete_image(id):
 
 @app.after_request
 def add_header(response):
-    # response.cache_control.no_store = True
+    """Handles caching so that images should show on button press"""
+
+    response.cache_control.no_store = True
     response.headers[
         "Cache-Control"
     ] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"

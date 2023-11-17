@@ -89,11 +89,11 @@ nav form.navbar-form {
   border: 2px solid #007bff;
 }
 
-
 /* ======================= Homepage */
+
 .homepage > .title{
-  font-size: 10rem;
-  padding: 0 7rem 10rem 3rem;
+  font-size: 15rem;
+  padding: 0rem 0rem;
 }
 
 /* ======================= Gallery */
@@ -105,20 +105,12 @@ nav form.navbar-form {
 
 }
 
-.gallery-image{
-  padding: 0rem;
-  height: 150px;
-  width: 100%;
-
-}
-
-
-
 /* ======================= Image page */
-.image-page > form{
-  display: inline
+.image-page{
+  max-height: 50%;
+  max-width: 50%;
 }
 .image-page-image{
   max-height: 50%;
-  max-width: 50%;
+  max-width: 100%;
 }

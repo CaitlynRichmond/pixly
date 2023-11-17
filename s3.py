@@ -25,3 +25,7 @@ def s3_delete(key):
     """Deletes object with key from the bucket"""
 
     s3.delete_object(Bucket=os.environ["AWS_BUCKET"], Key=key)
+
+
+def s3_download(object_name, filename):
+    s3.download_file(os.environ["AWS_BUCKET"], f"{object_name}", filename)

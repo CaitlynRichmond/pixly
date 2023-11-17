@@ -1,28 +1,46 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="image-page container">
-  <h2>{{photo.title}}</h2>
-  <h3>{{photo.caption}}</h3>
-  <img class="image-page-image" src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
-  <div>By: {{photo.by}}</div>
 
+<div class="container text-center">
+  <div class="row align-items-end">
 
-  {% for edit in edit_options %}
-  <form method="POST" action="/images/{{photo.id}}/edit/{{edit}}">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-primary" type="submit"> {{edit.capitalize()}} </button>
-  </form>
+    <h2 class="col-sm-2 text-start"></h2>
 
-  {% endfor %}
-  <form method="POST" action="/images/{{photo.id}}/revert">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-warning" type="submit"> Revert </button>
-  </form>
+    <h2 class="col-sm-10 text-start">{{photo.title}}</h2>
 
-  <form method="POST" action="/images/{{photo.id}}/delete">
-    {{ g.csrf_form.hidden_tag() }}
-    <button class="btn btn-danger" type="submit"> Delete </button>
-  </form>
+    <h2 class="col-sm-2 text-start"></h2>
+
+    <h4 class="col-sm-10 text-start">{{photo.caption}}</h4>
+
+  </div>
+
+  <div class="row justify-content-start">
+    <div class="col-sm-2 gap-2 d-md-block">
+      {% for edit in edit_options %}
+
+      <form method="POST" action="/images/{{photo.id}}/edit/{{edit}}">
+        {{ g.csrf_form.hidden_tag() }}
+        <button class="btn btn-primary w-75 my-1" type="submit"> {{edit.capitalize()}} </button>
+      </form>
+
+      {% endfor %}
+      <form method="POST" action="/images/{{photo.id}}/revert">
+        {{ g.csrf_form.hidden_tag() }}
+        <button class="btn btn-warning w-75 my-1" type="submit"> Revert </button>
+      </form>
+
+      <form method="POST" action="/images/{{photo.id}}/delete">
+        {{ g.csrf_form.hidden_tag() }}
+        <button class="btn btn-danger w-75 my-1" type="submit"> Delete </button>
+      </form>
+    </div>
+
+    <div class="col-sm-10 text-start ">
+      <img class="image-page-image" src="https://pixly-cait.s3.us-east-2.amazonaws.com/{{photo.id}}">
+      <div>By: {{photo.by}}</div>
+    </div>
+
+  </div>
 
 </div>
 {% endblock %}

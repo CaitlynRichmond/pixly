@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField
 from wtforms.validators import Optional
 
-from flask_wtf.file import FileField, FileRequired
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 
 # from werkzeug.utils import secure_filename
 
@@ -14,6 +14,10 @@ class ImageForm(FlaskForm):
         "File",
         validators=[
             FileRequired(),
+            FileAllowed(
+                ["heic", "png", "jpg", "jpeg", "webp"],
+                "Invalid File Type. Must be .heic, .png, .jpg, .jpeg, .webp",
+            ),
         ],
     )
     title = StringField("Title", validators=[Optional()])

@@ -4,7 +4,7 @@ from sqlalchemy import or_
 
 def get_makes_and_models(photos):
     """Gets the makes and models from all the photos and returns them"""
-    
+
     makes = set()
     models = set()
     for photo in photos:
@@ -35,6 +35,7 @@ def get_filtered_photos(search):
 def filter_by_make_and_model(photos, make, model):
     """Filters photos by make and model if they're not the default radio button
     selection"""
+
     if model != "Any":
         photos = [
             photo for photo in photos if photo.exif.get("Model") == model
