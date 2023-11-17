@@ -13,12 +13,12 @@ def edit_image(image, edit):
     elif edit == "invert":
         try:
             new_image = ImageOps.invert(image)
-        except OSError:
+        except (OSError, NotImplementedError):
             new_image = ImageOps.invert(image.convert("RGB"))
     elif edit == "auto-contrast":
         try:
             new_image = ImageOps.autocontrast(image)
-        except OSError:
+        except (OSError, NotImplementedError):
             new_image = ImageOps.autocontrast(image.convert("RGB"))
     elif edit == "grayscale":
         new_image = ImageOps.grayscale(image)

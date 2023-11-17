@@ -6,13 +6,18 @@ from flask_caching import Cache
 
 from flask import Flask, render_template, redirect, request, g
 from werkzeug.utils import secure_filename
+from gallery_helpers import (
+    get_makes_and_models,
+    get_filtered_photos,
+    filter_by_make_and_model,
+)
 
-from PIL import Image, TiffImagePlugin, ImageOps, ImageFilter, ImagePalette
+from PIL import Image, TiffImagePlugin
 from image_conversions import edit_image
 from PIL.ExifTags import TAGS
 from forms import ImageForm, EXIFSearchForm, CSRFProtectForm
 from models import db, connect_db, Photo
-from sqlalchemy import text, or_
+from sqlalchemy import text
 
 
 load_dotenv()
@@ -145,9 +150,10 @@ def upload():
 
 @app.get("/images/<int:id>")
 def image_page(id):
-    """Gets the specific image profile"""
+    """Gets the specific image profile and passes the edit options for the buttons"""
 
     photo = Photo.query.get_or_404(id)
+
     edit_options = [
         "flip",
         "mirror",
@@ -165,44 +171,23 @@ def image_page(id):
 
 @app.route("/images", methods=["GET", "POST"])
 def image_gallery():
+    """Displays image gallery and filtering by metadata for make and model for
+    images that have that data"""
+
     search = request.args.get("q", "")
     search = str(search).strip()
-    print("search after if", search)
+
     if not search:
         photos = Photo.query.all()
     else:
-        photos = Photo.query.filter(
-            or_(
-                Photo.by.ilike(f"%{search}%"),
-                Photo.title.ilike(f"%{search}%"),
-                Photo.caption.ilike(f"%{search}%"),
-            )
-        ).all()
+        photos = get_filtered_photos(search)
     form = EXIFSearchForm()
     if form.validate_on_submit():
         model = form.model.data
         make = form.make.data
-        if model != "Any":
-            photos = [
-                photo for photo in photos if photo.exif.get("Model") == model
-            ]
-        if make != "Any":
-            photos = [
-                photo for photo in photos if photo.exif.get("Make") == make
-            ]
+        photos = filter_by_make_and_model(photos, make, model)
 
-    # So I want photo EXIF data here, and I want to group them by the exif data names
-    makes = set()
-    models = set()
-    for photo in photos:
-        makes.add(photo.exif.get("Make"))
-        models.add(photo.exif.get("Model"))
-
-    if None in makes:
-        makes.remove(None)
-
-    if None in models:
-        models.remove(None)
+    makes, models = get_makes_and_models(photos)
 
     form.make.choices = ["Any", *makes]
     form.model.choices = ["Any", *models]
