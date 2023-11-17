@@ -106,11 +106,11 @@ nav form.navbar-form {
 }
 
 /* ======================= Image page */
-.image-page{
+.image-column{
   max-height: 50%;
   max-width: 50%;
 }
 .image-page-image{
-  max-height: 50%;
-  max-width: 100%;
+  max-height: 75%;
+  max-width: 75%;
 }
